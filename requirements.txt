@@ -1,4 +1,4 @@
 flask==2.3.2
-torch==2.1.0
-transformers==4.44.0
-numpy==1.26.0
+torch
+transformers
+numpy
