@@ -8,7 +8,7 @@ app = Flask(__name__)
 API_KEY = os.getenv("HF_API_KEY")
 
 # Hugging Face model (light + free)
-API_URL = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
+API_URL = "https://router.huggingface.co/hf-inference/models/facebook/blenderbot-400M-distill"
 
 headers = {
     "Authorization": f"Bearer {API_KEY}"
@@ -25,7 +25,10 @@ def chat():
     try:
         response = requests.post(
             API_URL,
-            headers=headers,
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json"
+            },
             json={"inputs": user_input}
         )
 
@@ -34,7 +37,7 @@ def chat():
         if isinstance(data, list):
             reply = data[0]["generated_text"]
         else:
-            reply = "Error: " + str(data)
+            reply = str(data)
 
     except Exception as e:
         reply = "Error: " + str(e)
