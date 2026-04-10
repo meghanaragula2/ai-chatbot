@@ -1,11 +1,18 @@
 from flask import Flask, render_template, request, jsonify
+import requests
 import os
-from openai import OpenAI
 
 app = Flask(__name__)
 
-# ✅ Create client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# 🔑 Get API key from Render
+API_KEY = os.getenv("HF_API_KEY")
+
+# Hugging Face model (light + free)
+API_URL = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
+
+headers = {
+    "Authorization": f"Bearer {API_KEY}"
+}
 
 @app.route("/")
 def home():
@@ -16,14 +23,18 @@ def chat():
     user_input = request.json["message"]
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": user_input}
-            ]
+        response = requests.post(
+            API_URL,
+            headers=headers,
+            json={"inputs": user_input}
         )
 
-        reply = response.choices[0].message.content
+        data = response.json()
+
+        if isinstance(data, list):
+            reply = data[0]["generated_text"]
+        else:
+            reply = "Error: " + str(data)
 
     except Exception as e:
         reply = "Error: " + str(e)
