@@ -4,50 +4,45 @@ import os
 
 app = Flask(__name__)
 
-# 🔑 Get API key from environment (Render)
 API_KEY = os.getenv("HF_API_KEY")
 
-# ✅ Working Hugging Face model (free + stable)
-API_URL = "https://router.huggingface.co/hf-inference/models/google/flan-t5-small"
+# ✅ WORKING ENDPOINT (no router issues)
+API_URL = "https://huggingface.co/api-inference/models/microsoft/DialoGPT-small"
 
 headers = {
-    "Authorization": f"Bearer {API_KEY}",
-    "Content-Type": "application/json"
+    "Authorization": f"Bearer {API_KEY}"
 }
 
 @app.route("/")
 def home():
     return render_template("index.html")
-
-
 @app.route("/chat", methods=["POST"])
 def chat():
     user_input = request.json.get("message", "")
 
-    if not user_input:
-        return jsonify({"response": "Please enter a message."})
-
     try:
         response = requests.post(
             API_URL,
-            headers=headers,
-            json={"inputs": user_input}
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "inputs": user_input,
+                "parameters": {"max_new_tokens": 50}
+            }
         )
 
-        # ❗ If API fails
+        # 🔍 Debug
         if response.status_code != 200:
-            return jsonify({"response": f"API Error: {response.text}"})
+            return jsonify({"response": "API Error: " + response.text})
 
-        try:
-            data = response.json()
-        except:
-            return jsonify({"response": "Model is loading... please wait ⏳"})
+        data = response.json()
 
-        # ✅ Handle response
         if isinstance(data, list):
             reply = data[0].get("generated_text", "No response")
         elif isinstance(data, dict) and "error" in data:
-            reply = "Model is loading or busy... try again ⏳"
+            reply = data["error"]
         else:
             reply = str(data)
 
@@ -57,7 +52,7 @@ def chat():
     return jsonify({"response": reply})
 
 
-# 🚀 IMPORTANT FOR RENDER
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
