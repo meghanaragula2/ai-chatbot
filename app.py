@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, jsonify
 import os
-import openai
+from openai import OpenAI
 
 app = Flask(__name__)
 
-# 🔑 STEP: Add your API key here
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# ✅ Create client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/")
 def home():
@@ -16,14 +16,14 @@ def chat():
     user_input = request.json["message"]
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "user", "content": user_input}
             ]
         )
 
-        reply = response["choices"][0]["message"]["content"]
+        reply = response.choices[0].message.content
 
     except Exception as e:
         reply = "Error: " + str(e)
@@ -32,5 +32,5 @@ def chat():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render gives PORT
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
